@@ -108,3 +108,76 @@ void delete_cb(Fl_Widget *, void* v) {
     textbuf->remove_selection();
 }
 
+//This callback function asks for a search string using the fl_input() convenience function and then calls the find2_cb() function to find the string
+void find_cb(Fl_Widget* w, void* v) {
+    EditorWindow* e = (EditorWindow*)v;
+    const char *val;
+
+    val = fl_input("Search String:", e->search);
+    if(val) {
+        //user entered  a string, go find it!
+        strcpy(e->search, val);
+        find2_cb(w, v);
+    }
+}
+
+//This function will find the next occurrence of the search string. If the search string is blank then we want to pop up the search dialog:
+void find2_cb(Fl_Widget* w, void* v) {
+    EditorWindow* e = (EditorWindow*)v;
+    if(e->search[0] == '\0') {
+        //search string is blank; get a new one
+        find_cb(w, v);
+        return;
+    }
+
+    int pos = e->editor->insert_position;
+    int found =  textbuf->search_forward(pos, e->search, &pos);
+    if (found) {
+        // Found a match; select and update the position...
+        textbuf->select(pos, pos+strlen(e->search));
+        e->editor->insert_position(pos+strlen(e->search));
+        e->editor->show_insert_position();
+    }
+    else fl_alert("No occurrences of \'%s\' found!", e->search);
+}
+
+//new_cb() is called when the user presses the "New File" button. 
+void new_cb(Fl_Widget*, void*) {
+    if(!check_save()) return;
+
+    filename[0] = '\0';
+    textbuf->select(0, textbuf->length());
+    textbuf->remove_selection();
+    changed = 0;
+    textbuf->call_modify_callbacks();
+}
+
+//open_cb() is called when the user presses the "Open File" button.
+void open_cb(Fl_Widget*, void*) {
+    if(!check_save()) return;
+    //the title of the dialog box, the default file name or diretory(if any), A wildcard string that specifies the types of files
+    char *newfile = fl_file_chooser("Open File?", "*", filename);//返回所选文件的地址
+    if(newfile != NULL) load_file(newfile, -1);
+}
+
+//paste_cb() is called when the user presses the "Paste" button. 
+void paste_cb(Fl_Widget*, void* v) {
+    EditorWindow* e = (EditorWindow*)v;
+    Fl_Text_Editor::kf_paste(0, e->editor);
+}
+
+//quit_cb() is called when the user presses the "Exit" button. 
+void quit_cb(Fl_Widget*. void*) {
+    if(changed && !checked_save())
+        return;
+    exit(0);
+}
+
+//replace_cb() is called when the user presses the "Replace" button. 
+void replace_cb(Fl_Widget*, void* v) {
+    EditorWindow* e = (EditorWindow*)v;
+    e->replace_dlg->show();
+}
+
+//replace2_cb()
+
