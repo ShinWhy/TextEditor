@@ -179,5 +179,103 @@ void replace_cb(Fl_Widget*, void* v) {
     e->replace_dlg->show();
 }
 
-//replace2_cb()
+//replace2_cb() 
+void replace2_cb(Fl_Widget*, void* v) {
+    EditorWindow* e = (EditorWindow*)v;
+    const char* find = e->replace_find->value();
+    const char* replace = e->replace_with->value();
+
+    if(find[0] == '\0') {
+        //search string is blank; get a new one
+        e->replace_dlg->show();
+        return;
+    }
+
+    e->replace_dlg->hide();
+
+    int pos = e->editor->insert_position();
+    int found = textbuf->search_forward(pos, find, &pos);
+
+    if(found) {
+        //Found a match; update the position and replace text...
+        textbuf->select(pos, pos+strlen(find));
+        textbuf->remove_selection();
+        textbuf->insert(pos, replace);
+        textbuf->select(pos, pos+strlen(replace));
+        e->editor->insert_position((pos+strlen(replace)));
+        e->editor->show_insert_position();
+    }
+    else {
+        fl_alert("No occurrences of \'%s\' found!", find);
+    }
+
+}
+
+//replall_cb() is called when the user presses the "Replace All" button. 
+void replacall_cb(Fl_Widget* , void* v) {
+    EditorWindow* e = (EditorWindow*) v;
+    const char* find = e->replace_find->value();
+    const char* replace = e->replace_with->value();
+
+    if(find == '\0') {
+        //Search string is blank; get a new one
+        e->replace_dlg->show();
+        return;
+    }
+
+    e->replace_dlg->hide();
+
+    e->editor->insert_position(0);
+    int times = 0;
+
+    //loop through the whole string
+    for(int found = 1; found;) {
+        int pos = e->editor->insert_position();
+        found = textbuf->search_forward(pos, find, &pos);
+
+        if(found) {
+            //Found a match; update the position and replace text...
+            textbuf->select(pos, pos+strlen(find));
+            textbuf->remove_selection();
+            textbuf->insert(pos, replace);
+            
+            e->editor->insert_position(pos+strlen(replace));
+            e->editor->show_insert_position();
+
+            times++;
+        }
+    }
+
+    if(times) fl_message("Replaced %d occurrences", times);
+    else fl_alert("No occurrences of \'%s\' found!", find);
+
+
+}
+
+//replcan_cb(): hide the replace dialog
+void replcan_cb(Fl_Widget*, void* v) {
+    EditorWindow* e = (EditorWindow*) v;
+    e->replace_dlg->hide();
+}
+
+//save_cb() is called when the user presses the "Save as" button.
+void save_cb(void) {
+    //No filename - get one
+    if(filename[0] == '\0') {
+        saveas_cb();
+        return;
+    }
+    else save_file(filename);
+    
+} 
+
+void saveas_cb(void) {
+    char *newfile;
+    /***
+     * The title of the dialog box
+     * A wildcard stringg
+    */
+    newfile = fl_file_chooser("Save File As?", "*", filename);  
+    if(newfile!= NULL) save_file(newfile);
+}
 
