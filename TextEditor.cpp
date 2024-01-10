@@ -279,3 +279,79 @@ void saveas_cb(void) {
     if(newfile!= NULL) save_file(newfile);
 }
 
+
+//Now we need other functions to make those call functions work
+int check_save(void) {
+    if(changed)  return 1;
+
+    int r = fl_choice("Do you want to save your changes?", "Cancel", "Save", "Discard");
+
+    if(r == 1) {
+        save_cb();
+        return !changed;
+    }
+
+    return (r == 2)? 1 : 0;
+}
+
+//load_file() loads the specific file into the textbuf class
+int loading = 0;
+void load_file(char *newfile, int pos) {
+    loading = 1; //this flag is set to 1 to prevent multiple file loads from occuring at the same time
+    int insert = (ipos != -1);// insert falg is used to check if the file is being inserted into th editor
+    //ipos is used to specify the position in the file where the file should be inserted. -1 indicates that the file is being inseted
+    changed = insert;// if so, changed is set to 1
+    if (!insert) strcpy(filename, " "); //if the file is not being inserted, the function set the filename empty
+    
+    int r;
+    if(!insert) r = textbuf->insertfile(newfile);
+    else r = textbuf->insertfile(newfile, ipos);
+
+    if(r)
+        fl_alert("Error reading from the file \'%s\':\n%s.", newfile, strerror(errno));
+    else
+        if(!insert) strcpy(filename, newfile);
+    
+    loading =0;
+    textbuf->call_modify_callbacks();//used to notify any registered modification callbacks,
+}
+
+void save_file(char *newfile) {
+    /**
+    * 0 on success
+    * non-zero on error (strerror() contains reason)
+    * 1 indicates open for write failed (no data saved)
+    * 2 indicates error occurred while writing data (data was partially saved)
+    */
+    if(textbuf->savefile(newfile))
+        fl_alert("Error writing to the file \'%s\':\n%s.", newfile, strerror(errno));
+    else
+        strcpy(filename, newfile);
+    changed = 0;
+    textbuf->call_modify_callbacks();
+}
+
+void set_titile(Fl_Window* w) {
+    if(filename[0] == '\0') strcpy(title, "Untitled");
+    else {
+        char *slash;
+        slash = strrchr(filename, '/');
+#ifdef WIN32
+    if(slash == NULL) slash = strrchr(filename, '\\');
+#endif
+    if (slash != NULL) strcpy(title, slash + 1);
+    else strcpy(title, filename);
+    }
+
+    if(changed) strcat(title, " （modified）");
+
+    w->label(title);
+}
+
+int main(int argc, char **argv) {
+    textbuf = new Fl_Text_Buffer;
+    Fl_Window* window = new_view();
+    window->show(1, argv);
+    if(argc > 1) load_file(argv[1], -1);
+    return Fl::run;
+}
