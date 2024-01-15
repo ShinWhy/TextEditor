@@ -1,13 +1,5 @@
-#include <FL/Fl.H>
-#include <FL/Fl_Window.H>
-#include <FL/Fl_Box.H>
-#include <FL/Fl_Double_Window.H>
-#include <FL/Fl_Input.H>
-#include <FL/Fl_Button.H>
-#include <FL/Fl_Return_Button.H>
-#include <FL/Fl_Text_Editor.H> //莫名其妙报错
-#include <FL/Fl_Menu_Item.H>
-#include <stdio.h>
+#include "TextEditor.h"
+using namespace std;
 
 class EditorWindow: public Fl_Double_Window {
     public:
@@ -29,21 +21,24 @@ class EditorWindow: public Fl_Double_Window {
 };
 
 //some global variables
-int changed =0; //记录文件是否被修改过
+int changed = 0; //记录文件是否被修改过
 char filename[256] = "";//记录当前打开的文件名
-Fl_Text_Buffer *textbuf;//记录当前打开的文件内容
+Fl_Text_Buffer *textbuf = 0;//记录当前打开的文件内容
+char title[] = "Untitled";
 
-/**Menubars and Menus**/
-Fl_Menu_Item menuitems[] = {
+static void build_Menu(Fl_Menu_Bar* menu, Fl_Window* window)
+{
+    /**Menubars and Menus**/
+    Fl_Menu_Item menuitems[] = {
     /*FL_SUBMENU表示该菜单项是一个子菜单，快捷键，回调函数的ID，用于控制菜单项的行为*/
     {"&File",               0, 0, 0, FL_SUBMENU},
         {"&New File",       0, (Fl_Callback *)new_cb },
         {"&Open File...",   FL_CTRL + 'o', (Fl_Callback *)open_cb },
-        {"&Insert File...", FL_CTRL + 'i', (Fl_Callback *)insert_cb, 0, FL_MENU_DIVIDER }, //分割线
+        //{"&Insert File...", FL_CTRL + 'i', (Fl_Callback *)insert_cb, 0, FL_MENU_DIVIDER }, //分割线
         {"&Save File",      FL_CTRL + 's', (Fl_Callback *)save_cb},
         {"Save File &As...",FL_CTRL + FL_SHIFT + 's', (Fl_Callback *)saveas_cb, 0, FL_MENU_DIVIDER},
-        {"New &View",       FL_ALT + 'v', (Fl_Callback *)view_cb, 0},//在FLTK库中，使用“&”符号可以将紧随其后的字母作为菜单项的快捷键。
-        {"&Close View",     FL_CTRL + 'w', (Fl_Callback *)close_cb, 0, FL_MENU_DIVIDER},
+        //{"New &View",       FL_ALT + 'v', (Fl_Callback *)view_cb, 0},//在FLTK库中，使用“&”符号可以将紧随其后的字母作为菜单项的快捷键。
+        //{"&Close View",     FL_CTRL + 'w', (Fl_Callback *)close_cb, 0, FL_MENU_DIVIDER},
         {"E&xit",           FL_CTRL + 'q', (Fl_Callback *)quit_cb, 0},
         {0},//结束标志
     {"&Edit",               0, 0, 0, FL_SUBMENU},
@@ -62,16 +57,40 @@ Fl_Menu_Item menuitems[] = {
     {0}
 
 };
-Fl_Menu_Bar *m = new Fl_Menu_bar(0, 0, 640, 30);
-m->copy(menuitems);
+    Fl_Menu_Bar *m = new Fl_Menu_Bar(0, 0, 640, 30);
+    m->copy(menuitems);
+}
 
+
+Fl_Window* new_View()
+{
+    EditorWindow* window = new EditorWindow(800, 600, title);
+    
+    window->begin();
+    
+    window->editor = new Fl_Text_Editor(10, 30, 780, 560);
+    window->editor->buffer(textbuf);
+    
+    Fl_Menu_Bar* menuBar = new Fl_Menu_Bar(0, 0, 800, 30);
+    build_Menu(menuBar, window);
+
+    window->end();
+    window->resizable(window->editor);
+    window->editor->linenumber_width(60);
+
+    textbuf->add_modify_callback(changed_cb, window);
+    textbuf->call_modify_callbacks();
+    return window;
+}
 
 /**Editing the Text**/
-w->editor = new Fl_Text_Editor(0, 30, 640, 370);
-w->editor->buffer(textbuf);
-// keep track of changes to the file, we also want to add a "modify" callback
-textbuf->add_modify_callback(changed_cb, w);
-textbuf->call_modify_callbacks();
+// EditorWindow* w = new EditorWindow(640, 480, title); 
+// w->begin();
+// w->editor = new Fl_Text_Editor(0, 30, 640, 370);
+// w->editor->buffer(textbuf);
+// // keep track of changes to the file, we also want to add a "modify" callback
+// textbuf->add_modify_callback(changed_cb, w);
+// textbuf->call_modify_callbacks();
 
 /**The Replace Dialog**/
 Fl_Window *replace_dlg = new Fl_Window(300, 105, "Replace");
@@ -85,7 +104,7 @@ Fl_Button *replace_cancel = new Fl_Button(230, 70, 60, 25, "Cancel");
 void changed_cb(int, int nInserted, int nDeleted, int, const char*, void* v) {
     if((nInserted || nDeleted) && !loading) changed = 1;
     EditorWindow *w = (EditorWindow*)v;
-    set_titile(w);
+    set_title(w);
     if(loading) w->editor->show_insert_position();
 }
 
@@ -130,7 +149,7 @@ void find2_cb(Fl_Widget* w, void* v) {
         return;
     }
 
-    int pos = e->editor->insert_position;
+    int pos = e->editor->insert_position();
     int found =  textbuf->search_forward(pos, e->search, &pos);
     if (found) {
         // Found a match; select and update the position...
@@ -160,6 +179,11 @@ void open_cb(Fl_Widget*, void*) {
     if(newfile != NULL) load_file(newfile, -1);
 }
 
+void undo_cb(void)
+{
+    textbuf->undo();
+}
+
 //paste_cb() is called when the user presses the "Paste" button. 
 void paste_cb(Fl_Widget*, void* v) {
     EditorWindow* e = (EditorWindow*)v;
@@ -167,8 +191,8 @@ void paste_cb(Fl_Widget*, void* v) {
 }
 
 //quit_cb() is called when the user presses the "Exit" button. 
-void quit_cb(Fl_Widget*. void*) {
-    if(changed && !checked_save())
+void quit_cb(Fl_Widget*, void*) {
+    if(changed && !check_save())
         return;
     exit(0);
 }
@@ -217,7 +241,7 @@ void replacall_cb(Fl_Widget* , void* v) {
     const char* find = e->replace_find->value();
     const char* replace = e->replace_with->value();
 
-    if(find == '\0') {
+    if(*find == '\0') {
         //Search string is blank; get a new one
         e->replace_dlg->show();
         return;
@@ -295,8 +319,7 @@ int check_save(void) {
 }
 
 //load_file() loads the specific file into the textbuf class
-int loading = 0;
-void load_file(char *newfile, int pos) {
+void load_file(char *newfile, int ipos) {
     loading = 1; //this flag is set to 1 to prevent multiple file loads from occuring at the same time
     int insert = (ipos != -1);// insert falg is used to check if the file is being inserted into th editor
     //ipos is used to specify the position in the file where the file should be inserted. -1 indicates that the file is being inseted
@@ -304,7 +327,7 @@ void load_file(char *newfile, int pos) {
     if (!insert) strcpy(filename, " "); //if the file is not being inserted, the function set the filename empty
     
     int r;
-    if(!insert) r = textbuf->insertfile(newfile);
+    if(!insert) r = textbuf->insertfile(newfile, ipos);
     else r = textbuf->insertfile(newfile, ipos);
 
     if(r)
@@ -331,7 +354,7 @@ void save_file(char *newfile) {
     textbuf->call_modify_callbacks();
 }
 
-void set_titile(Fl_Window* w) {
+void set_title(Fl_Window* w) {
     if(filename[0] == '\0') strcpy(title, "Untitled");
     else {
         char *slash;
@@ -348,10 +371,31 @@ void set_titile(Fl_Window* w) {
     w->label(title);
 }
 
+Fl_Window* new_view() {
+    EditorWindow* window = new EditorWindow(800, 600, title);
+    
+    window->begin();
+    
+    window->editor = new Fl_Text_Editor(10, 30, 780, 560);
+    window->editor->buffer(textbuf);
+    
+    Fl_Menu_Bar* menuBar = new Fl_Menu_Bar(0, 0, 800, 30);
+    build_Menu(menuBar, window);
+
+    window->end();
+    window->resizable(window->editor);
+    window->editor->linenumber_width(60);
+
+    textbuf->add_modify_callback(changed_cb, window);
+    textbuf->call_modify_callbacks();
+    return window;
+}
+
+
 int main(int argc, char **argv) {
     textbuf = new Fl_Text_Buffer;
-    Fl_Window* window = new_view();
+    Fl_Window* window = new_View();
     window->show(1, argv);
     if(argc > 1) load_file(argv[1], -1);
-    return Fl::run;
+    return Fl::run();
 }
