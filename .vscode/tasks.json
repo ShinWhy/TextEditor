@@ -7,13 +7,13 @@
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                "${file}",
+                "${fileDirname}\\TextEditor.cpp",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
-                "-I",
+                "-I",[
                 "D:\\fltk\\fltk\\include",
                 "D:\\BuildYourOwnX\\TextEditorPoj"
-
+                ]
             ],
             "options": {
                 "cwd": "${fileDirname}"
