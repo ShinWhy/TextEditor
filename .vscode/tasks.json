@@ -6,8 +6,9 @@
             "command": "D:\\mingw64\\bin\\g++.exe",
             "args": [
                 "-fdiagnostics-color=always",
-                "-g",
+                "-g",[
                 "${fileDirname}\\TextEditor.cpp",
+                ],
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
                 "-I",[

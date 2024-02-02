@@ -36,7 +36,7 @@ int check_save(void);
 void load_file(char *newfile, int ipos);
 void save_file(char *newfile);
 void set_title(Fl_Window* w);
-Fl_Window* new_view();
+//Fl_Window* new_view();
 
 int loading = 0;    
 

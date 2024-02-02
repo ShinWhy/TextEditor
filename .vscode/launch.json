@@ -10,7 +10,14 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/${fileBasenameNoExtension}.exe",
-            "args": [],
+            "args": [
+                "-g",
+				"${file}",
+                "-I",
+                "D:\\fltk\\fltk\\include", 
+				"-o",
+				"${fileDirname}\\${fileBasenameNoExtension}.exe"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

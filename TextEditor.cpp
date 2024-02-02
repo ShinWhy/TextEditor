@@ -1,4 +1,3 @@
-#include "TextEditor.h"
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Box.H>
@@ -11,6 +10,8 @@
 #include <FL/Fl_Menu_Bar.H>
 #include <FL/fl_ask.H>
 #include <FL/Fl_File_Chooser.H>
+
+#include "TextEditor.h"
 #include <stdio.h>
 #include <cstdlib>
 
@@ -77,26 +78,26 @@ static void build_Menu(Fl_Menu_Bar* menu, Fl_Window* window)
 }
 
 
-Fl_Window* new_View()
-{
-    EditorWindow* window = new EditorWindow(800, 600, title);
+// Fl_Window* new_View()
+// {
+//     EditorWindow* window = new EditorWindow(800, 600, title);
     
-    window->begin();
+//     window->begin();
     
-    window->editor = new Fl_Text_Editor(10, 30, 780, 560);
-    window->editor->buffer(textbuf);
+//     window->editor = new Fl_Text_Editor(10, 30, 780, 560);
+//     window->editor->buffer(textbuf);
     
-    Fl_Menu_Bar* menuBar = new Fl_Menu_Bar(0, 0, 800, 30);
-    build_Menu(menuBar, window);
+//     Fl_Menu_Bar* menuBar = new Fl_Menu_Bar(0, 0, 800, 30);
+//     build_Menu(menuBar, window);
 
-    window->end();
-    window->resizable(window->editor);
-    window->editor->linenumber_width(60);
+//     window->end();
+//     window->resizable(window->editor);
+//     window->editor->linenumber_width(60);
 
-    textbuf->add_modify_callback(changed_cb, window);
-    textbuf->call_modify_callbacks();
-    return window;
-}
+//     textbuf->add_modify_callback(changed_cb, window);
+//     textbuf->call_modify_callbacks();
+//     return window;
+// }
 
 /**Editing the Text**/
 // EditorWindow* w = new EditorWindow(640, 480, title); 
@@ -409,7 +410,7 @@ Fl_Window* new_view() {
 
 int main(int argc, char **argv) {
     textbuf = new Fl_Text_Buffer;
-    Fl_Window* window = new_View();
+    Fl_Window* window = new_view();
     window->show(1, argv);
     if(argc > 1) load_file(argv[1], -1);
     return Fl::run();
